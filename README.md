@@ -1,20 +1,21 @@
-# API AVA - Sistema de Abertura de Chamados
+# API AVA - Sistema de Abertura de Chamados TASY
 
 ## 📋 Descrição
 
-API REST desenvolvida em Node.js para integração com o sistema TASY (Sistema de Gestão Hospitalar) para abertura de chamados de manutenção. O sistema permite autenticação de usuários e criação de chamados técnicos através de procedures Oracle.
+API REST desenvolvida em Node.js para integração com o sistema TASY (Sistema de Gestão Hospitalar) para abertura de chamados de manutenção. O sistema permite autenticação de usuários e criação de chamados técnicos através de procedures Oracle, com interface web gerenciada pelo Portainer.
 
 ## 🚀 Tecnologias Utilizadas
 
-- **Node.js** - Runtime JavaScript
+- **Node.js 18** - Runtime JavaScript
 - **Express.js** - Framework web
-- **Oracle Database** - Banco de dados principal
-- **SQLite** - Banco de dados local para usuários
-- **Knex.js** - Query builder
-- **JWT** - Autenticação
+- **Oracle Database** - Banco de dados principal (TASY)
+- **SQLite3** - Banco de dados local para usuários
+- **Knex.js** - Query builder e migrações
+- **JWT** - Autenticação com token sem expiração
 - **bcryptjs** - Criptografia de senhas
-- **PM2** - Gerenciador de processos
-- **Docker** - Containerização
+- **PM2** - Gerenciador de processos em produção
+- **Docker & Docker Compose** - Containerização
+- **Portainer** - Interface web para gerenciamento de containers
 
 ## 📁 Estrutura do Projeto
 
@@ -22,80 +23,111 @@ API REST desenvolvida em Node.js para integração com o sistema TASY (Sistema d
 ava_abertura_de_chamado/
 ├── src/
 │   ├── config/
-│   │   └── auth.js                 # Configurações de autenticação JWT
+│   │   └── auth.js                    # Configurações JWT (sem expiração)
 │   ├── connection/
-│   │   └── index.js                # Conexão com Oracle Database
+│   │   └── index.js                   # Conexão Oracle Database
 │   ├── controller/
-│   │   ├── ChamadoController.js    # Controlador de chamados
-│   │   ├── SessionController.js    # Controlador de sessões
-│   │   └── UserController.js       # Controlador de usuários
+│   │   ├── ChamadoController.js       # Controlador de chamados TASY
+│   │   ├── SessionController.js       # Controlador de autenticação
+│   │   ├── UserController.js          # Controlador de usuários
+│   │   └── ControllerResetTasy.js     # Controlador de reset TASY
 │   ├── database/
+│   │   ├── database.db                # Banco SQLite local
 │   │   ├── knex/
-│   │   │   └── migrations/         # Migrações do banco SQLite
+│   │   │   ├── index.js               # Configuração Knex
+│   │   │   └── migrations/
+│   │   │       └── 20240816145816_CreateUser.js
 │   │   └── sqlite/
+│   │       └── index.js               # Conexão SQLite
 │   ├── middlewares/
-│   │   └── ensureAuthenticated.js  # Middleware de autenticação
+│   │   └── ensureAuthenticated.js     # Middleware JWT
 │   ├── repositories/
-│   │   └── UserCreateService.js    # Serviço de criação de usuários
+│   │   └── UserCreateService.js       # Serviço de usuários
 │   ├── routes/
-│   │   ├── createChamado.routes.js # Rotas de chamados
-│   │   ├── createUser.routes.js    # Rotas de usuários
-│   │   ├── sessions.routes.js      # Rotas de autenticação
-│   │   └── index.js                # Arquivo principal de rotas
+│   │   ├── createChamado.routes.js    # Rotas de chamados
+│   │   ├── createUser.routes.js       # Rotas de usuários
+│   │   ├── sessions.routes.js         # Rotas de autenticação
+│   │   ├── valid.routes.js            # Rotas de validação
+│   │   └── index.js                   # Arquivo principal de rotas
 │   ├── utils/
-│   │   └── AppError.js             # Classe de tratamento de erros
-│   └── server.js                   # Arquivo principal do servidor
-├── docker-compose.yml              # Configuração Docker Compose
-├── dockerfile.txt                  # Dockerfile da aplicação
-├── ecosystem.config.js             # Configuração PM2
-├── knexfile.js                     # Configuração Knex
-└── package.json                    # Dependências do projeto
+│   │   └── AppError.js                # Classe de tratamento de erros
+│   └── server.js                      # Servidor principal
+├── setup-docker-portainer.sh          # Script de instalação Docker + Portainer
+├── docker-compose.yml                 # Configuração Docker Compose
+├── dockerfile.txt                     # Dockerfile da aplicação
+├── ecosystem.config.js                # Configuração PM2
+├── knexfile.js                        # Configuração Knex
+└── package.json                       # Dependências do projeto
 ```
 
 ## 🔧 Funcionalidades
 
 ### 🔐 Autenticação
 
-- Criação de usuários com senha criptografada
-- Login com JWT (JSON Web Token)
+- Criação de usuários com senha criptografada (bcryptjs)
+- Login com JWT sem expiração (`expiresIn: "-1"`)
 - Middleware de autenticação para rotas protegidas
+- Validação de token via header `Authorization: Bearer <token>`
 
-### 📝 Chamados
+### 📝 Chamados TASY
 
-- Criação de chamados técnicos
-- Integração com procedure Oracle `ghas_os_ava_p`
-- Validação e limpeza de dados JSON
+- Criação de chamados técnicos via procedure Oracle `ghas_os_ava_p`
+- Validação e limpeza de dados JSON (remoção de caracteres de controle)
 - Logs detalhados de processamento
+- Integração direta com sistema TASY
 
 ### 🗄️ Banco de Dados
 
-- **Oracle Database**: Banco principal para procedures e dados do TASY
-- **SQLite**: Banco local para gerenciamento de usuários
+- **Oracle Database**: Banco principal para procedures TASY
+- **SQLite3**: Banco local para gerenciamento de usuários
 - Migrações automáticas com Knex.js
+- Pool de conexões configurado
+
+### 🐳 Containerização
+
+- Docker com Oracle Instant Client integrado
+- Docker Compose para orquestração
+- Portainer para gerenciamento web
+- Volumes persistentes para dados
 
 ## 🛠️ Instalação e Configuração
 
-### Pré-requisitos
+### Método 1: Instalação Automática (Recomendado)
 
+Execute o script de instalação que configura tudo automaticamente:
+
+```bash
+# Dar permissão de execução
+chmod +x setup-docker-portainer.sh
+
+# Executar o script
+./setup-docker-portainer.sh
+```
+
+O script irá:
+
+- Instalar Docker e Docker Compose
+- Configurar e iniciar Portainer
+- Construir e iniciar a API AVA
+- Configurar todas as dependências
+
+### Método 2: Instalação Manual
+
+#### Pré-requisitos
+
+- Ubuntu/Debian (para script automático)
 - Node.js 18+
 - Oracle Database
 - Oracle Instant Client
-- Docker (opcional)
 
-### 1. Clone o repositório
+#### 1. Clone o repositório
 
 ```bash
 git clone <url-do-repositorio>
 cd ava_abertura_de_chamado
 ```
 
-### 2. Instale as dependências
-
-```bash
-npm install
-```
-
-### 3. Configure as variáveis de ambiente
+#### 2. Configure as variáveis de ambiente
 
 Crie um arquivo `.env` na raiz do projeto:
 
@@ -107,50 +139,52 @@ DATABASE_URL=sua_url_conexao_oracle
 LIBARY_ORACLE=caminho_para_oracle_client
 
 # Configurações JWT
-JWT_SECRET=sua_chave_secreta_jwt
+AUTH_SECRET=sua_chave_secreta_jwt
 
 # Configurações do usuário padrão
 USER_SERVICE=usuario_padrao
 PASSORWD=senha_padrao
 ```
 
-### 4. Execute as migrações
+#### 3. Instalação local
 
 ```bash
+# Instalar dependências
+npm install
+
+# Executar migrações
 npm run migrate
-```
 
-### 5. Inicie o servidor
-
-**Desenvolvimento:**
-
-```bash
+# Iniciar em desenvolvimento
 npm run dev
-```
 
-**Produção:**
-
-```bash
+# Iniciar em produção
 npm start
 ```
 
-## 🐳 Execução com Docker
-
-### Usando Docker Compose
+#### 4. Instalação Docker
 
 ```bash
-docker-compose up -d
-```
+# Construir e iniciar com Docker Compose
+docker-compose up -d --build
 
-### Usando Docker diretamente
-
-```bash
-# Construir a imagem
+# Ou construir manualmente
 docker build -f dockerfile.txt -t api-ava .
-
-# Executar o container
 docker run -p 5000:5000 --env-file .env api-ava
 ```
+
+## 🌐 Acesso aos Serviços
+
+### Portainer (Gerenciamento Web)
+
+- **URL**: https://localhost:9443 ou http://localhost:9000
+- **Usuário**: admin
+- **Senha**: admin123
+
+### API AVA
+
+- **URL**: http://localhost:5000
+- **Status**: Disponível após instalação
 
 ## 📡 Endpoints da API
 
@@ -172,12 +206,18 @@ Cria uma nova sessão de usuário.
 **Response:**
 
 ```json
-"jwt_token"
+"jwt_token_sem_expiracao"
 ```
 
 #### POST `/users`
 
 Cria um novo usuário (protegido por autenticação).
+
+**Headers:**
+
+```
+Authorization: Bearer <jwt_token>
+```
 
 **Body:**
 
@@ -188,11 +228,18 @@ Cria um novo usuário (protegido por autenticação).
 }
 ```
 
-### Chamados
+### Chamados TASY
 
 #### POST `/chamado`
 
 Cria um novo chamado técnico (protegido por autenticação).
+
+**Headers:**
+
+```
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+```
 
 **Body:**
 
@@ -218,66 +265,151 @@ Cria um novo chamado técnico (protegido por autenticação).
 
 ## 🔒 Segurança
 
-- Todas as rotas principais são protegidas por autenticação JWT
-- Senhas são criptografadas usando bcryptjs
-- Validação e limpeza de dados JSON para prevenir injeção
-- Variáveis de ambiente para configurações sensíveis
+- **JWT sem expiração**: Tokens permanecem válidos indefinidamente
+- **Criptografia**: Senhas criptografadas com bcryptjs (salt rounds: 8)
+- **Autenticação obrigatória**: Todas as rotas principais protegidas
+- **Validação de dados**: Limpeza de caracteres de controle em JSON
+- **Variáveis de ambiente**: Configurações sensíveis externalizadas
 
-## 📊 Monitoramento
+## 📊 Monitoramento e Logs
 
-O projeto utiliza PM2 para gerenciamento de processos em produção:
+### PM2 (Produção)
 
-- **Instâncias**: Máximo de instâncias disponíveis
-- **Modo**: Cluster para melhor performance
+- **Instâncias**: Máximo disponível
+- **Modo**: Cluster
+- **Restart**: Automático em falhas
 - **Logs**: Automáticos
-- **Restart**: Automático em caso de falha
+
+### Logs do Sistema
+
+- Conexão Oracle Database
+- Criação de chamados TASY
+- Autenticação de usuários
+- Erros de processamento
+- Execução de procedures
 
 ## 🐛 Troubleshooting
 
 ### Problemas com Oracle Client
 
-1. Verifique se o Oracle Instant Client está instalado
-2. Configure a variável `LIBARY_ORACLE` no `.env`
-3. Para Docker, o Oracle Client é instalado automaticamente
+```bash
+# Verificar instalação Oracle Client
+ls -la $LIBARY_ORACLE
+
+# Para Docker (instalado automaticamente)
+docker exec -it AVA-integration ls -la /opt/oracle/instantclient_21_17
+```
 
 ### Problemas de Conexão
 
-1. Verifique as credenciais do Oracle Database
-2. Confirme se a URL de conexão está correta
-3. Teste a conectividade com o banco
+```bash
+# Testar conectividade Oracle
+sqlplus usuario/senha@database_url
+
+# Verificar logs do container
+docker logs AVA-integration
+```
 
 ### Problemas de Autenticação
 
-1. Verifique se o usuário existe no banco SQLite
-2. Confirme se o JWT_SECRET está configurado
-3. Verifique se o token está sendo enviado corretamente
+```bash
+# Verificar usuários no SQLite
+sqlite3 src/database/database.db "SELECT * FROM users;"
 
-## 📝 Logs
+# Verificar JWT
+echo "seu_token" | base64 -d
+```
 
-O sistema gera logs detalhados para:
+### Problemas com Portainer
 
-- Conexão com banco de dados
-- Criação de chamados
-- Autenticação de usuários
-- Erros de processamento
+```bash
+# Verificar status do Portainer
+docker ps | grep portainer
+
+# Reiniciar Portainer
+docker restart portainer
+```
+
+## 🔧 Comandos Úteis
+
+### Docker
+
+```bash
+# Ver logs da API
+docker logs AVA-integration
+
+# Reiniciar API
+docker restart AVA-integration
+
+# Acessar container
+docker exec -it AVA-integration bash
+
+# Reconstruir imagem
+docker-compose up -d --build
+```
+
+### Desenvolvimento
+
+```bash
+# Executar migrações
+npm run migrate
+
+# Modo desenvolvimento
+npm run dev
+
+# Modo produção
+npm start
+```
+
+## 📝 Estrutura do Banco de Dados
+
+### Tabela Users (SQLite)
+
+```sql
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  password TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  upated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Procedure Oracle (TASY)
+
+```sql
+ghas_os_ava_p(
+  ds_dano_brev_p,
+  ds_dano_p,
+  cd_pf_solic_p,
+  nr_seq_localizacao_p,
+  nr_seq_equipamento_p,
+  nm_usuario_p,
+  ie_status_p
+);
+```
 
 ## 🤝 Contribuição
 
 1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
+2. Crie uma branch para sua feature (`git checkout -b feature/NovaFuncionalidade`)
+3. Commit suas mudanças (`git commit -m 'Adiciona nova funcionalidade'`)
+4. Push para a branch (`git push origin feature/NovaFuncionalidade`)
 5. Abra um Pull Request
 
 ## 📄 Licença
 
-Este projeto está sob a licença ISC. Veja o arquivo `LICENSE` para mais detalhes.
+Este projeto está sob a licença ISC.
 
 ## 👥 Autores
 
 - Desenvolvido para integração com sistema TASY
-- API para abertura de chamados técnicos
+- API para abertura de chamados técnicos hospitalares
 
 ## 📞 Suporte
 
-Para suporte técnico ou dúvidas sobre a implementação, entre em contato com a equipe de desenvolvimento.
+Para suporte técnico ou dúvidas sobre a implementação:
+
+- Verifique os logs do sistema
+- Consulte a documentação do TASY
+- Entre em contato com a equipe de desenvolvimento
