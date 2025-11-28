@@ -7,7 +7,7 @@ const sessionsRoutes = require("./sessions.routes");
 const ensureAuthenticated = require("../middlewares/ensureAuthenticated");
 const createChamado = require("./createChamado.routes");
 
-routes.use("/", ensureAuthenticated)
+routes.use("/")
 routes.use("/passwordReset", ensureAuthenticated, validResetRoutes)
 routes.use("/sessions", sessionsRoutes)
 routes.use("/chamado", createChamado)
