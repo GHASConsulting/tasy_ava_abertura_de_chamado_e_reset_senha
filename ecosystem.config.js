@@ -1,7 +1,7 @@
 module.exports = {
     apps : [{
       name: "API_TASY_RESET",
-      script: "./dist/src/server.js",
+      script: "./src/server.js",
       instances: "max",
       env: {
         NODE_ENV: "development",
