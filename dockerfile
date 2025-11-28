@@ -5,6 +5,9 @@ RUN apt-get update && apt-get install -y \
     libaio1 \
     unzip \
     wget \
+    python3 \
+    make \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
 # Criar diretório para o Oracle Instant Client
