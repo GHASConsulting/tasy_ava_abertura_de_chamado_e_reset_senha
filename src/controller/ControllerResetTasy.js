@@ -4,7 +4,6 @@ class ControllerResetTasy {
   async reset(request, response) {
     
     const {matricula, cpf, } = request.body
-    const MatriculaNum = matricula.replace(/\D/g, '')
     const CPFNum = cpf.replace(/\D/g, '')
 
 
@@ -19,7 +18,7 @@ class ControllerResetTasy {
     WHERE
       UPPER(nm_usuario) = :matricula
     GROUP BY
-      ds_usuario HAVING COUNT(*) >= 1`, [MatriculaNum]);
+      ds_usuario HAVING COUNT(*) >= 1`, [matricula]);
 
     if (checkUserExists.rows.length === 0) {
       return response.status(200).json({ error: "Matricula não encontrada"})
@@ -36,7 +35,7 @@ class ControllerResetTasy {
       nr_cpf = :cpf 
       and a.cd_pessoa_fisica= b.cd_pessoa_fisica
       and UPPER(b.nm_usuario) =:matricula
-    GROUP BY nr_cpf HAVING COUNT(*) >= 1`, [CPFNum, MatriculaNum]);
+    GROUP BY nr_cpf HAVING COUNT(*) >= 1`, [CPFNum, matricula]);
 
     if(checkCPFExists.rows.length === 0) {
       return response.status(200).json({ error: "CPF não encontrado" })
