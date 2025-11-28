@@ -1,4 +1,5 @@
 const connectionTasy = require("../connection")
+const oracledb = require('oracledb');
 
 
 class ChamadoController {
@@ -15,7 +16,7 @@ class ChamadoController {
     let database = null;
     try {
       database = await connectionTasy();
-      
+
       if (!database) {
         return response.status(500).json({ error: "Erro ao conectar com o banco de dados" });
       }
@@ -49,6 +50,19 @@ class ChamadoController {
       console.log(`Número de Sequência de Equipamento: ${nrSeqEquipamento}`);
       console.log(`Status: ${status}`);
 
+      // Converter valores para os tipos corretos
+      // cdPessoaSolicitante - manter como string (pode ser CPF formatado)
+      const cdPessoaSolicitanteClean = cdPessoaSolicitante
+        ? (typeof cdPessoaSolicitante === 'string' ? cdPessoaSolicitante.replace(/\D/g, '') : String(cdPessoaSolicitante))
+        : null;
+
+      const nrSeqLocalizacaoNum = nrSeqLocalizacao !== null && nrSeqLocalizacao !== undefined
+        ? Number(nrSeqLocalizacao)
+        : null;
+      const nrSeqEquipamentoNum = nrSeqEquipamento !== null && nrSeqEquipamento !== undefined
+        ? Number(nrSeqEquipamento)
+        : null;
+
       // Comando PL/SQL para chamar a procedure
       const sql = `
         begin
@@ -64,16 +78,19 @@ class ChamadoController {
         end;
       `;
 
-      // Parâmetros da procedure
+      // Parâmetros da procedure com tipos explícitos
+      // Para valores null, usar undefined ou null explicitamente
       const binds = {
-        ds_dano_brev_p: dsDanoBreve,
-        ds_dano_p: dsDano,
-        cd_pf_solic_p: cdPessoaSolicitante,
-        nr_seq_localizacao_p: nrSeqLocalizacao,
-        nr_seq_equipamento_p: nrSeqEquipamento,
-        nm_usuario_p: nmUsuario,
-        ie_status_p: status,
+        ds_dano_brev_p: dsDanoBreve ? { val: dsDanoBreve, type: oracledb.STRING } : { val: null, type: oracledb.STRING },
+        ds_dano_p: dsDano ? { val: dsDano, type: oracledb.STRING } : { val: null, type: oracledb.STRING },
+        cd_pf_solic_p: cdPessoaSolicitanteClean ? { val: cdPessoaSolicitanteClean, type: oracledb.STRING } : { val: null, type: oracledb.STRING },
+        nr_seq_localizacao_p: nrSeqLocalizacaoNum !== null ? { val: nrSeqLocalizacaoNum, type: oracledb.NUMBER } : { val: null, type: oracledb.NUMBER },
+        nr_seq_equipamento_p: nrSeqEquipamentoNum !== null ? { val: nrSeqEquipamentoNum, type: oracledb.NUMBER } : { val: null, type: oracledb.NUMBER },
+        nm_usuario_p: nmUsuario ? { val: nmUsuario, type: oracledb.STRING } : { val: null, type: oracledb.STRING },
+        ie_status_p: status ? { val: status, type: oracledb.STRING } : { val: null, type: oracledb.STRING },
       };
+
+      console.log('Executando procedure com binds:', JSON.stringify(binds, null, 2));
 
       // Executando a procedure
       await database.execute(sql, binds, { autoCommit: true });
