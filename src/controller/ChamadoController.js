@@ -12,8 +12,13 @@ class ChamadoController {
   }
 
   async create(request, response) {
-    const database = await connectionTasy();
+    let database = null;
     try {
+      database = await connectionTasy();
+      
+      if (!database) {
+        return response.status(500).json({ error: "Erro ao conectar com o banco de dados" });
+      }
       // Verifica se request.body já é um objeto ou precisa ser parseado
       let dados;
       if (typeof request.body === 'string') {
@@ -75,12 +80,23 @@ class ChamadoController {
 
       console.log("Procedure executada com sucesso!");
 
+      if (database) {
+        await database.close();
+      }
+
       return response.status(201).json({
         message: "Chamado criado com sucesso",
       });
 
     } catch (err) {
       console.error('Erro ao processar chamado:', err);
+      if (database) {
+        try {
+          await database.close();
+        } catch (closeError) {
+          console.error('Erro ao fechar conexão:', closeError);
+        }
+      }
       return response.status(400).json({
         error: 'Erro ao processar a requisição',
         message: err.message
