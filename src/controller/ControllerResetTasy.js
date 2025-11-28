@@ -2,8 +2,8 @@ const connection = require("../connection")
 
 class ControllerResetTasy {
   async reset(request, response) {
-    
-    const {matricula, cpf, } = request.body
+
+    const { matricula, cpf, } = request.body
     const CPFNum = cpf.replace(/\D/g, '')
 
 
@@ -16,12 +16,12 @@ class ControllerResetTasy {
     FROM
       usuario 
     WHERE
-      UPPER(nm_usuario) =:UPPER(matricula)
+      UPPER(nm_usuario) = UPPER(:matricula)
     GROUP BY
       ds_usuario HAVING COUNT(*) >= 1`, [matricula]);
 
     if (checkUserExists.rows.length === 0) {
-      return response.status(200).json({ error: "Matricula não encontrada"})
+      return response.status(200).json({ error: "Matricula não encontrada" })
     }
 
     //verificação do CPF
@@ -34,15 +34,14 @@ class ControllerResetTasy {
     WHERE 
       nr_cpf = :cpf 
       and a.cd_pessoa_fisica= b.cd_pessoa_fisica
-      and UPPER(b.nm_usuario) =:UPPER(matricula)
+      and UPPER(b.nm_usuario) = UPPER(:matricula)
     GROUP BY nr_cpf HAVING COUNT(*) >= 1`, [CPFNum, matricula]);
 
-    if(checkCPFExists.rows.length === 0) {
+    if (checkCPFExists.rows.length === 0) {
       return response.status(200).json({ error: "CPF não encontrado" })
     }
 
-    if(!checkCPFExists.rows.length !== 0 && !checkUserExists  !== 0 ) {
-
+    if (checkCPFExists.rows.length > 0 && checkUserExists.rows.length > 0) {
       const result = await db.execute(
         `UPDATE USUARIO
          SET 
@@ -51,22 +50,22 @@ class ControllerResetTasy {
            IE_SITUACAO = 'A',
            dt_alteracao_senha = null
          WHERE
-           UPPER(NM_USUARIO) =:UPPER(matricula)`,
-        [MatriculaNum],
+           UPPER(NM_USUARIO) = UPPER(:matricula)`,
+        [matricula],
         { autoCommit: true }
       );
-  
+
       console.log(result);
     }
 
     const variable = [
-    checkCPFExists.rows,
-    checkUserExists.rows
+      checkCPFExists.rows,
+      checkUserExists.rows
     ]
     console.log(variable)
 
     return response.status(200).json({
-        message: "Usuário Atualizado com Sucesso"
+      message: "Usuário Atualizado com Sucesso"
     })
   }
 }

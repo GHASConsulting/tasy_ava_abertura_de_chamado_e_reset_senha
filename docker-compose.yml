@@ -2,13 +2,14 @@ version: "3.8"
 
 services:
   app:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile
     container_name: AVA-integration
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "5001:5000"
     volumes:
       - .:/app
       - /app/node_modules
