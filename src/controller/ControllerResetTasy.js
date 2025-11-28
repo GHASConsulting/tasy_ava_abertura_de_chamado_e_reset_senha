@@ -16,7 +16,7 @@ class ControllerResetTasy {
     FROM
       usuario 
     WHERE
-      UPPER(nm_usuario) = :matricula
+      UPPER(nm_usuario) =:UPPER(matricula)
     GROUP BY
       ds_usuario HAVING COUNT(*) >= 1`, [matricula]);
 
@@ -34,7 +34,7 @@ class ControllerResetTasy {
     WHERE 
       nr_cpf = :cpf 
       and a.cd_pessoa_fisica= b.cd_pessoa_fisica
-      and UPPER(b.nm_usuario) =:matricula
+      and UPPER(b.nm_usuario) =:UPPER(matricula)
     GROUP BY nr_cpf HAVING COUNT(*) >= 1`, [CPFNum, matricula]);
 
     if(checkCPFExists.rows.length === 0) {
@@ -51,7 +51,7 @@ class ControllerResetTasy {
            IE_SITUACAO = 'A',
            dt_alteracao_senha = null
          WHERE
-           UPPER(NM_USUARIO) = :matricula`,
+           UPPER(NM_USUARIO) =:UPPER(matricula)`,
         [MatriculaNum],
         { autoCommit: true }
       );
