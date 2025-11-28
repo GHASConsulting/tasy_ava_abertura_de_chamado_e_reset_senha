@@ -63,23 +63,30 @@ class ChamadoController {
         ? Number(nrSeqEquipamento)
         : null;
 
-      // Comando PL/SQL para chamar a procedure
+      // Converter status para NUMBER (0 ou outro valor numérico)
+      const statusNum = status !== null && status !== undefined
+        ? Number(status)
+        : 0;
+
+      // Comando PL/SQL para chamar a procedure com schema TASY e parâmetro OUT
+      // Usando sintaxe posicional (mais compatível com node-oracledb)
       const sql = `
         begin
-          ghas_os_ava_p(
+          TASY.ghas_os_ava_p(
             :ds_dano_brev_p,
             :ds_dano_p,
             :cd_pf_solic_p,
             :nr_seq_localizacao_p,
             :nr_seq_equipamento_p,
             :nm_usuario_p,
-            :ie_status_p
+            :ie_status_p,
+            :ds_retorno_p
           );
         end;
       `;
 
       // Parâmetros da procedure com tipos explícitos
-      // Para valores null, usar undefined ou null explicitamente
+      // ds_retorno_p é um parâmetro OUT
       const binds = {
         ds_dano_brev_p: dsDanoBreve ? { val: dsDanoBreve, type: oracledb.STRING } : { val: null, type: oracledb.STRING },
         ds_dano_p: dsDano ? { val: dsDano, type: oracledb.STRING } : { val: null, type: oracledb.STRING },
@@ -87,15 +94,26 @@ class ChamadoController {
         nr_seq_localizacao_p: nrSeqLocalizacaoNum !== null ? { val: nrSeqLocalizacaoNum, type: oracledb.NUMBER } : { val: null, type: oracledb.NUMBER },
         nr_seq_equipamento_p: nrSeqEquipamentoNum !== null ? { val: nrSeqEquipamentoNum, type: oracledb.NUMBER } : { val: null, type: oracledb.NUMBER },
         nm_usuario_p: nmUsuario ? { val: nmUsuario, type: oracledb.STRING } : { val: null, type: oracledb.STRING },
-        ie_status_p: status ? { val: status, type: oracledb.STRING } : { val: null, type: oracledb.STRING },
+        ie_status_p: { val: statusNum, type: oracledb.NUMBER },
+        ds_retorno_p: { type: oracledb.STRING, dir: oracledb.BIND_OUT, maxSize: 4000 }
       };
 
-      console.log('Executando procedure com binds:', JSON.stringify(binds, null, 2));
+      console.log('Executando procedure com binds:', JSON.stringify({
+        ds_dano_brev_p: dsDanoBreve,
+        ds_dano_p: dsDano,
+        cd_pf_solic_p: cdPessoaSolicitanteClean,
+        nr_seq_localizacao_p: nrSeqLocalizacaoNum,
+        nr_seq_equipamento_p: nrSeqEquipamentoNum,
+        nm_usuario_p: nmUsuario,
+        ie_status_p: statusNum
+      }, null, 2));
 
       // Executando a procedure
-      await database.execute(sql, binds, { autoCommit: true });
+      const result = await database.execute(sql, binds, { autoCommit: true });
 
-      console.log("Procedure executada com sucesso!");
+      // Capturar o valor de retorno do parâmetro OUT
+      const retorno = result.outBinds.ds_retorno_p;
+      console.log("Procedure executada com sucesso! Retorno:", retorno);
 
       if (database) {
         await database.close();
@@ -103,6 +121,7 @@ class ChamadoController {
 
       return response.status(201).json({
         message: "Chamado criado com sucesso",
+        retorno: retorno || null
       });
 
     } catch (err) {
