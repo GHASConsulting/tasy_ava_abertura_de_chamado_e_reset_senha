@@ -18,10 +18,17 @@ runMigrations()
 app.use(express.json())
 app.use(routes)
 
-userRepository.create({
+// Criar usuário apenas se as variáveis de ambiente estiverem definidas
+if (process.env.USER_SERVICE && process.env.PASSORWD) {
+  userRepository.create({
     name: process.env.USER_SERVICE,
     password: process.env.PASSORWD
-})
+  }).catch(err => {
+    console.error("Erro ao criar usuário:", err.message);
+  });
+} else {
+  console.log("Variáveis USER_SERVICE ou PASSORWD não definidas. Pulando criação de usuário.");
+}
 
 
 app.listen(port, () => console.log(`server is running on PORT ${port}`))

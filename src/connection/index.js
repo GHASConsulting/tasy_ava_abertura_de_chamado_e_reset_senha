@@ -1,6 +1,13 @@
-const oracledb = require('oracledb');
-oracledb.initOracleClient({ libDir: process.env.LIBARY_ORACLE });
 require("dotenv/config")
+const oracledb = require('oracledb');
+
+// Inicializar Oracle Client apenas se LIBARY_ORACLE estiver definido
+if (process.env.LIBARY_ORACLE) {
+  oracledb.initOracleClient({ libDir: process.env.LIBARY_ORACLE });
+} else {
+  // Fallback para o caminho padrão instalado
+  oracledb.initOracleClient({ libDir: '/opt/oracle/instantclient_21_17' });
+}
 
 async function connectionTasy() {
   try {

@@ -93,6 +93,66 @@ class ControllerResetTasy {
       });
     }
   }
+
+  async SearchUser(request, response) {
+    let db = null;
+    try {
+      const { cpf } = request.body;
+
+      if (!cpf) {
+        return response.status(400).json({ message: "CPF é obrigatório" });
+      }
+
+      const CPFNum = cpf.replace(/\D/g, '');
+      db = await connection();
+
+      if (!db) {
+        return response.status(500).json({ error: "Erro ao conectar com o banco de dados" });
+      }
+
+      const checkCPFExists = await db.execute(
+        `SELECT 
+          a.nr_cpf,
+          b.nm_usuario,
+          b.ds_usuario,
+          a.nr_telefone_celular
+        FROM 
+          pessoa_fisica a,
+          usuario b
+        WHERE 
+          a.nr_cpf = :cpf 
+          and a.cd_pessoa_fisica = b.cd_pessoa_fisica
+          and b.ie_situacao = 'A'
+        FETCH FIRST 1 ROW ONLY`,
+        { cpf: CPFNum }
+      );
+
+      if (!checkCPFExists.rows || checkCPFExists.rows.length === 0) {
+        await db.close();
+        return response.status(200).json({ message: "CPF não encontrado" });
+      }
+
+      await db.close();
+      return response.status(200).json({
+        message: "CPF encontrado",
+        data: checkCPFExists.rows
+      });
+
+    } catch (error) {
+      console.error('Erro na busca de usuário:', error);
+      if (db) {
+        try {
+          await db.close();
+        } catch (closeError) {
+          console.error('Erro ao fechar conexão:', closeError);
+        }
+      }
+      return response.status(500).json({
+        error: "Erro ao processar solicitação",
+        message: error.message
+      });
+    }
+  }
 }
 
 module.exports = ControllerResetTasy

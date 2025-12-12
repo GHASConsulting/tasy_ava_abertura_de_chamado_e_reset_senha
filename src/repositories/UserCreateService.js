@@ -5,13 +5,19 @@ const sqliteConnection = require("../database/sqlite");
 class UserRepository {
 
   async create({name, password}) {
+    // Validação dos parâmetros
+    if (!name || !password) {
+      console.log("Nome ou senha não fornecidos. Pulando criação de usuário.");
+      return null;
+    }
+
     const database = await sqliteConnection();
 
-    const checkUserExists = await  knex("users").where({name}).first()
+    const checkUserExists = await knex("users").where("name", name).first()
 
     console.log(checkUserExists)
     if(checkUserExists) {
-        return console.log("Usuário criado!")
+        return console.log("Usuário já existe!")
     }
 
     if(!checkUserExists){
